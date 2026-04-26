@@ -1073,6 +1073,18 @@ server.on('error', (e) => {
     }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', async () => {
     console.log(`🐾 Scratch API is purring on http://localhost:${PORT}`);
+    
+    try {
+        const localtunnel = require('localtunnel');
+        const tunnel = await localtunnel({ port: PORT });
+        console.log(`🌐 Public API URL: ${tunnel.url}`);
+        
+        tunnel.on('close', () => {
+            console.log('🌐 Public API tunnel closed.');
+        });
+    } catch (err) {
+        console.warn('Could not start localtunnel. The API will only be available locally.');
+    }
 });

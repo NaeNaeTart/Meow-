@@ -64,13 +64,7 @@ const commands = [
         .setIntegrationTypes([0, 1])
         .setContexts([0, 1, 2])
         .setDMPermission(true),
-    new SlashCommandBuilder()
-        .setName('avatar-meow')
-        .setDescription('Add cat ears to a user\'s avatar!')
-        .setIntegrationTypes([0, 1])
-        .setContexts([0, 1, 2])
-        .setDMPermission(true)
-        .addUserOption(option => option.setName('target').setDescription('The user to catify').setRequired(false)),
+
     new SlashCommandBuilder()
         .setName('meow-translator')
         .setDescription('Translate human speech into meows!')
