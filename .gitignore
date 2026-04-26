@@ -1,0 +1,9 @@
+node_modules/
+.env
+.DS_Store
+economy.json
+afk.json
+warns.json
+paws.json
+scratches.json
+vclocks.json
