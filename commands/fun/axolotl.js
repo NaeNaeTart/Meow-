@@ -9,8 +9,12 @@ module.exports = {
         try {
             // This API is often down, so we use it but have a fallback ready
             const res = await fetch('https://axoltlapi.herokuapp.com/');
-            const data = await res.json();
+            if (!res.ok) throw new Error('API down');
             
+            const contentType = res.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) throw new Error('Not JSON');
+
+            const data = await res.json();
             if (!data.url) throw new Error('No image found');
 
             const embed = new EmbedBuilder()

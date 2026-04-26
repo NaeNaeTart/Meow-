@@ -1,39 +1,61 @@
 # Meow! Discord Bot 🐾
 
-A simple Discord bot built with `discord.js`.
+A high-performance, feature-rich Discord bot built with `discord.js` v14, prioritizing non-blocking asynchronous operations and a premium user experience.
 
-## Setup
+## 🚀 Core Features
 
-1.  **Clone/Open the project**: You're already here!
-2.  **Install dependencies**:
+### 💰 Economy & Games
+- **Paws & Scratches:** Earn and spend virtual currency.
+- **Games:** `/slots`, `/rps` (Rock Paper Scissors), and `/trivia`.
+- **Social Economy:** `/daily`, `/work`, `/pay`, and `/rob` (risky but rewarding!).
+- **Leaderboards:** Track the wealthiest users in the server.
+
+### 🎭 Social & Fun
+- **Interactions:** `/hug`, `/bite`, and `/boop` using a high-quality local image stash.
+- **Animals:** `/axolotl` and `/dogfact` with smart fallback logic.
+- **Avatars:** `/avatar-meow` to generate customized cat avatars.
+
+### 🛠️ Utility & Tools
+- **Image Compression:** `/compress` using the high-performance `sharp` library (supports resizing and format conversion).
+- **Link Shortener:** `/shorten` with support for CleanURI, Is.gd, TinyURL, and Da.gd.
+- **Dictionary:** `/dictionary` with both Standard and Urban Dictionary (slang) support.
+- **Gaming:** `/freegame` to discover random free-to-play titles.
+
+### 🛡️ Moderation & Management
+- **Warning System:** `/warn` and `/warnhistory` for server moderation.
+- **Voice Control:** `/vcmute`, `/vcunmute`, `/vcdeafen`, and `/vcundeafen` with persistent state tracking.
+- **AFK System:** `/afk` to let others know when you're away.
+
+### 🌐 Scratch API (Equicord)
+- Built-in HTTP server (Port 2444) providing a public API for external plugins.
+- Automatically creates a secure tunnel via `localtunnel` for remote access.
+
+## 🏗️ Architecture
+
+- **Centralized Database Manager (`db.js`):** Uses an in-memory cache and an asynchronous, queue-based disk writing system to eliminate event-loop blocking.
+- **Modular Commands:** Cleanly organized into `fun`, `useful`, and `economy` categories.
+- **Hybrid Deployment:** Supports both Global and Guild-specific command registration.
+
+## ⚙️ Setup
+
+1.  **Install dependencies**:
     ```bash
     npm install
     ```
-3.  **Configure environment variables**:
+2.  **Configure environment variables**:
     - Rename `.env.example` to `.env`.
-    - Fill in your `DISCORD_TOKEN`. You can get this from the [Discord Developer Portal](https://discord.com/developers/applications).
-4.  **Invite the bot**:
-    - Go to the Discord Developer Portal.
-    - Create an application.
-    - Go to the **Bot** tab and click **Reset Token** to get your token.
-    - Under **Privileged Gateway Intents**, enable **Presence Intent**, **Server Members Intent**, and **Message Content Intent**.
-    - Go to **OAuth2** -> **URL Generator**.
-    - Select `bot` and `applications.commands`.
-    - Select the permissions you need (e.g., `Send Messages`, `Read Message History`).
-    - Copy the generated URL and paste it into your browser to invite the bot to your server.
+    - Fill in your `DISCORD_TOKEN`.
+3.  **Deploy Commands**:
+    ```bash
+    npm run deploy
+    ```
+4.  **Run the bot**:
+    - **Development:** `npm run dev`
+    - **Production:** `npm run start`
 
-## Running the bot
+## 📦 Requirements
+- Node.js 18.x or higher
+- C++ Build Tools (for `canvas` and `sharp` binaries)
 
-- **Development mode** (with auto-restart):
-  ```bash
-  npm run dev
-  ```
-- **Production mode**:
-  ```bash
-  npm start
-  ```
-
-## Features
-
-- Responds to `ping` with `Pong!`.
-- Responds to `meow` with `Meow! 🐾`.
+---
+*Created with 🐾 by the Meow! Team.*

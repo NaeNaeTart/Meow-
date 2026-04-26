@@ -9,6 +9,8 @@ module.exports = {
             const res = await fetch('https://dog-api.kinduff.com/api/facts');
             const data = await res.json();
             
+            if (!data.facts || data.facts.length === 0) throw new Error('No facts returned');
+            
             const embed = new EmbedBuilder()
                 .setTitle('🐶 Dog Fact!')
                 .setDescription(data.facts[0])

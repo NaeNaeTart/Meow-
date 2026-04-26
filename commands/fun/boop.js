@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,17 +9,27 @@ module.exports = {
         .addUserOption(option => option.setName('target').setDescription('The user to boop').setRequired(true)),
     async execute(interaction) {
         const target = interaction.options.getUser('target');
+        const path = require('path');
+        const fs = require('fs');
         
-        const gifs = [
-            'https://media.giphy.com/media/10gx1EEi0XwDQI/giphy.gif',
-            'https://media.giphy.com/media/xUOxf8nWeFdzu737YQ/giphy.gif'
-        ];
+        const stashPath = path.join(__dirname, '../../Meow! stash');
+        const selectedFile = 'Boop 1.gif';
+        const filePath = path.join(stashPath, selectedFile);
 
-        const embed = new EmbedBuilder()
-            .setDescription(`*<@${interaction.user.id}> boops <@${target.id}> on the nose! Boop!*`)
-            .setImage(gifs[Math.floor(Math.random() * gifs.length)])
-            .setColor('#FFB6C1');
+        try {
+            const buffer = fs.readFileSync(filePath);
+            const extension = selectedFile.split('.').pop();
+            const attachment = new AttachmentBuilder(buffer, { name: `boop.${extension}` });
 
-        await interaction.reply({ embeds: [embed] });
+            const embed = new EmbedBuilder()
+                .setDescription(`*<@${interaction.user.id}> boops <@${target.id}> on the nose! Boop!*`)
+                .setImage(`attachment://boop.${extension}`)
+                .setColor('#FFB6C1');
+
+            await interaction.reply({ embeds: [embed], files: [attachment] });
+        } catch (error) {
+            console.error('Boop Local Image Error:', error);
+            await interaction.reply({ content: '❌ Failed to load the boop image from local storage.', ephemeral: true });
+        }
     },
 };
