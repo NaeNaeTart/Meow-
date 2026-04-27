@@ -1,4 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const path = require('path');
+const fs = require('fs');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,27 +11,69 @@ module.exports = {
         .addUserOption(option => option.setName('target').setDescription('The user to boop').setRequired(true)),
     async execute(interaction) {
         const target = interaction.options.getUser('target');
-        const path = require('path');
-        const fs = require('fs');
-        
         const stashPath = path.join(__dirname, '../../Meow! stash');
-        const selectedFile = 'Boop 1.gif';
-        const filePath = path.join(stashPath, selectedFile);
 
-        try {
+        const getAttachmentAndEmbed = () => {
+            // Flawlessly scan for any files starting with "Boop"
+            const files = fs.readdirSync(stashPath).filter(f => f.toLowerCase().startsWith('boop'));
+            if (files.length === 0) return null;
+
+            const selectedFile = files[Math.floor(Math.random() * files.length)];
+            const filePath = path.join(stashPath, selectedFile);
             const buffer = fs.readFileSync(filePath);
             const extension = selectedFile.split('.').pop();
-            const attachment = new AttachmentBuilder(buffer, { name: `boop.${extension}` });
+            const fileName = `${selectedFile.split('.')[0]}-${Date.now()}.${extension}`.replace(/\s+/g, '_');
+            const attachment = new AttachmentBuilder(buffer, { name: fileName });
+
+            let desc = `*<@${interaction.user.id}> boops <@${target.id}> on the nose! Boop!*`;
+            if (selectedFile.includes('NOOT')) {
+                desc += `\n\n🎨 *Image credit: <@846490523509194822>*`;
+            }
 
             const embed = new EmbedBuilder()
-                .setDescription(`*<@${interaction.user.id}> boops <@${target.id}> on the nose! Boop!*`)
-                .setImage(`attachment://boop.${extension}`)
+                .setDescription(desc)
+                .setImage(`attachment://${fileName}`)
                 .setColor('#FFB6C1');
 
-            await interaction.reply({ embeds: [embed], files: [attachment] });
+            return { attachment, embed };
+        };
+
+        try {
+            const initial = getAttachmentAndEmbed();
+            if (!initial) return await interaction.reply({ content: '❌ No boop images found!', ephemeral: true });
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('reroll_boop')
+                    .setLabel('Reroll 🐾')
+                    .setStyle(ButtonStyle.Secondary)
+            );
+
+            const response = await interaction.reply({ 
+                embeds: [initial.embed], 
+                files: [initial.attachment],
+                components: [row]
+            });
+
+            const collector = response.createMessageComponentCollector({ 
+                componentType: ComponentType.Button, 
+                time: 60000 
+            });
+
+            collector.on('collect', async i => {
+                if (i.user.id !== interaction.user.id) return i.reply({ content: "Only the booper can reroll!", ephemeral: true });
+                
+                const next = getAttachmentAndEmbed();
+                await i.update({ embeds: [next.embed], files: [next.attachment], components: [row] });
+            });
+
+            collector.on('end', () => {
+                interaction.editReply({ components: [] }).catch(() => {});
+            });
+
         } catch (error) {
-            console.error('Boop Local Image Error:', error);
-            await interaction.reply({ content: '❌ Failed to load the boop image from local storage.', ephemeral: true });
+            console.error('Boop Error:', error);
+            await interaction.reply({ content: '❌ Failed to load the boop image.', ephemeral: true });
         }
     },
 };

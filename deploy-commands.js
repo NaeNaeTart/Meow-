@@ -197,6 +197,12 @@ const commands = [
         integration_types: [0, 1],
         contexts: [0, 1, 2],
     },
+    {
+        name: 'Dogify Message',
+        type: ApplicationCommandType.Message,
+        integration_types: [0, 1],
+        contexts: [0, 1, 2],
+    },
 ].map(command => {
     if (command instanceof SlashCommandBuilder) return command.toJSON();
     return command;

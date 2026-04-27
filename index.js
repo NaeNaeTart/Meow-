@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, Events, GatewayIntentBits, AttachmentBuilder, Partials, MessageFlags, EmbedBuilder, AuditLogEvent, ActionRowBuilder, ButtonBuilder, ButtonStyle, Collection } = require('discord.js');
 const { createAudioPlayer, createAudioResource, joinVoiceChannel, AudioPlayerStatus } = require('@discordjs/voice');
 const path = require('path');
-const nodeHtmlToImage = require('node-html-to-image');
+const { createCanvas, loadImage, registerFont } = require('canvas');
 const fs = require('fs');
 const ms = require('ms');
 const db = require('./db');
@@ -18,6 +18,21 @@ const client = new Client({
     ],
     partials: [Partials.Channel],
 });
+
+// --- Pre-load Official Assets for Performance ---
+let cachedCatPaw, cachedDogPaw;
+const loadAssets = async () => {
+    try {
+        const catPath = path.join(__dirname, 'Meow! stash', 'Cat Paw.png');
+        const dogPath = path.join(__dirname, 'Meow! stash', 'Dog Paw.png');
+        if (fs.existsSync(catPath)) cachedCatPaw = await loadImage(catPath);
+        if (fs.existsSync(dogPath)) cachedDogPaw = await loadImage(dogPath);
+        console.log('🐾 Official assets cached for high-performance rendering.');
+    } catch (e) {
+        console.error('⚠️ Failed to pre-load paws:', e);
+    }
+};
+loadAssets();
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -287,129 +302,220 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     }
 
-    if (interaction.commandName === 'Meowify Message') {
-        console.log(`Processing Meowify Message for ${interaction.user.tag}...`);
+    if (interaction.commandName === 'Meowify Message' || interaction.commandName === 'Dogify Message') {
         await interaction.deferReply();
 
+        const isDog = interaction.commandName === 'Dogify Message';
+        const petType = isDog ? 'dog' : 'cat';
         const message = interaction.targetMessage;
         const author = message.author;
         const originalContent = message.content || "*No text content*";
         
-        const meowifiedContent = originalContent.split(/\s+/).map(word => {
-            if (word.length > 7) return 'Meowww~';
-            if (word.length > 4) return 'Meow!';
-            if (word.length > 2) return 'Meow';
-            return 'meow';
-        }).join(' ');
+        // --- Advanced Translation Logic ---
+        const translate = (text, type) => {
+            const catVocab = ['Meow', 'Mrrp', 'Nya', 'Purr', 'Hiss', 'Mew', 'Meowww'];
+            const dogVocab = ['Woof', 'Bark', 'Arf', 'Bork', 'Awoo', 'Grrr', 'Woofff'];
+            const vocab = type === 'dog' ? dogVocab : catVocab;
+            
+            return text.split(/\s+/).map(word => {
+                // Clean word for length check, but keep punctuation for the final result
+                const cleanWord = word.replace(/[^\w]/g, '');
+                const len = cleanWord.length;
+                
+                let result = vocab[Math.floor(Math.random() * vocab.length)];
+                
+                // Adjust length dynamically
+                if (len <= 2) {
+                    result = result.charAt(0).toLowerCase() + (Math.random() > 0.5 ? '!' : '');
+                } else if (len > 8) {
+                    const suffix = result.slice(-1).repeat(Math.min(len - 5, 10));
+                    result = result + suffix;
+                } else if (len > 5) {
+                    result = result + (Math.random() > 0.5 ? '!' : '~');
+                }
+
+                // Preserve Capitalization
+                if (cleanWord === cleanWord.toUpperCase() && len > 1) result = result.toUpperCase();
+                else if (cleanWord.charAt(0) === cleanWord.charAt(0).toUpperCase()) result = result.charAt(0).toUpperCase() + result.slice(1).toLowerCase();
+                else result = result.toLowerCase();
+
+                // Preserve Punctuation
+                if (word.endsWith('?')) result += '?';
+                if (word.endsWith('!')) result += '!';
+                if (word.endsWith('...')) result += '...';
+
+                return result;
+            }).join(' ');
+        };
+
+        const petifiedContent = translate(originalContent, petType);
 
         try {
+            const canvas = createCanvas(600, 220);
+            const ctx = canvas.getContext('2d');
+
+            // --- Background Shadow ---
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 30;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 10;
+
+            // --- Main Card Background ---
+            ctx.fillStyle = '#1e1f22';
+            const x = 15, y = 15, w = 570, h = 180, r = 20;
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // --- Decorative Paw Prints (Official Cached Asset) ---
+            const pawImage = isDog ? cachedDogPaw : cachedCatPaw;
+
+            const drawStashPaw = (px, py, scale, opacity, rotate) => {
+                if (!pawImage) return;
+                
+                const tw = pawImage.width * scale;
+                const th = pawImage.height * scale;
+                const pCanvas = createCanvas(tw, th);
+                const pCtx = pCanvas.getContext('2d');
+                pCtx.translate(tw/2, th/2);
+                pCtx.rotate(rotate);
+
+                // Draw the Main Inky Color
+                const mainColor = isDog ? 'rgb(68, 161, 224)' : 'rgb(255, 140, 160)'; // More saturated "Ink" colors
+                
+                const tCanvas = createCanvas(tw, th);
+                const tCtx = tCanvas.getContext('2d');
+                tCtx.drawImage(pawImage, 0, 0, tw, th);
+                tCtx.globalCompositeOperation = 'source-in';
+                tCtx.fillStyle = mainColor;
+                tCtx.fillRect(0, 0, tw, th);
+
+                // --- Add "Rubber Stamp" Distress/Noise ---
+                // We randomly remove tiny bits of ink to simulate the rubber stamp texture
+                tCtx.globalCompositeOperation = 'destination-out';
+                for (let i = 0; i < 400; i++) {
+                    const nx = Math.random() * tw;
+                    const ny = Math.random() * th;
+                    const size = Math.random() * 1.5;
+                    tCtx.fillRect(nx, ny, size, size);
+                }
+
+                pCtx.drawImage(tCanvas, -tw/2, -th/2);
+                
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.drawImage(pCanvas, px - tw/2, py - th/2);
+                ctx.restore();
+            };
+
+            // Use the card's path as a mask for the paws
+            ctx.save();
+            // Re-define the card path for clipping (since we already filled it, we just need to clip to it)
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+            ctx.clip();
+
+            const baseScale = isDog ? 0.12 : 0.18;
+            if (pawImage) {
+                drawStashPaw(485, 155, baseScale, 0.28, 0.3);
+                drawStashPaw(555, 75, baseScale * 0.7, 0.22, -0.2);
+            }
+            ctx.restore();
+
+            // --- Avatar ---
             const avatarUrl = author.displayAvatarURL({ extension: 'png', size: 128 });
-            const htmlTemplate = `
-            <html>
-                <head>
-                    <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-                        body {
-                            background: transparent;
-                            font-family: 'Inter', sans-serif;
-                            margin: 0;
-                            padding: 0;
-                        }
-                        .message-card {
-                            background: rgba(30, 31, 34, 0.9);
-                            border-radius: 16px;
-                            padding: 24px;
-                            display: flex;
-                            gap: 16px;
-                            width: 500px;
-                            max-width: 500px;
-                            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-                            border: 1px solid rgba(255,255,255,0.1);
-                            backdrop-filter: blur(10px);
-                            position: relative;
-                            overflow: hidden;
-                        }
-                        .message-card::before {
-                            content: '🐾';
-                            position: absolute;
-                            right: -10px;
-                            bottom: -10px;
-                            font-size: 80px;
-                            opacity: 0.1;
-                            transform: rotate(-15deg);
-                        }
-                        .avatar {
-                            width: 56px;
-                            height: 56px;
-                            border-radius: 50%;
-                            border: 2px solid #5865F2;
-                        }
-                        .content {
-                            flex: 1;
-                        }
-                        .header {
-                            display: flex;
-                            align-items: baseline;
-                            gap: 8px;
-                            margin-bottom: 4px;
-                        }
-                        .username {
-                            color: #ffffff;
-                            font-weight: 600;
-                            font-size: 16px;
-                        }
-                        .tag {
-                            background: #5865F2;
-                            color: white;
-                            font-size: 10px;
-                            padding: 2px 6px;
-                            border-radius: 4px;
-                            text-transform: uppercase;
-                            font-weight: 800;
-                        }
-                        .text {
-                            color: #dbdee1;
-                            font-size: 15px;
-                            line-height: 1.4;
-                            word-break: break-word;
-                        }
-                        .meow-overlay {
-                            color: #FFD700;
-                            font-weight: 600;
-                            font-style: italic;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="message-card">
-                        <img src="${avatarUrl}" class="avatar" />
-                        <div class="content">
-                            <div class="header">
-                                <span class="username">${author.username}</span>
-                                <span class="tag">Meowified</span>
-                            </div>
-                            <div class="text">
-                                ${meowifiedContent}
-                            </div>
-                        </div>
-                    </div>
-                </body>
-            </html>
-            `;
+            const avatar = await loadImage(avatarUrl);
+            
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(60, 65, 36, 0, Math.PI * 2, true);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(avatar, 24, 29, 72, 72);
+            ctx.restore();
 
-            const image = await nodeHtmlToImage({
-                html: htmlTemplate,
-                transparent: true,
-                selector: '.message-card',
-                puppeteerArgs: { args: ['--no-sandbox'] }
-            });
+            // Subtle Avatar Border (Color matched to pet)
+            ctx.strokeStyle = isDog ? 'rgba(88, 101, 242, 0.5)' : 'rgba(255, 182, 193, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(60, 65, 36, 0, Math.PI * 2, true);
+            ctx.stroke();
 
-            const attachment = new AttachmentBuilder(image, { name: 'meowified.png' });
+            // --- User Header ---
+            ctx.font = 'bold 18px "Segoe UI", "Arial", sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(author.username, 115, 58);
+
+            // Badge
+            const nameWidth = ctx.measureText(author.username).width;
+            const badgeX = 115 + nameWidth + 10;
+            ctx.fillStyle = isDog ? '#44a1e0' : '#5865F2'; // Distinct blue for dog
+            ctx.beginPath();
+            ctx.roundRect(badgeX, 42, isDog ? 70 : 74, 22, 4);
+            ctx.fill();
+            
+            ctx.font = 'bold 10px "Segoe UI", "Arial", sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(isDog ? 'DOGIFIED' : 'MEOWIFIED', badgeX + 7, 56);
+
+            // --- Message Content ---
+            ctx.font = 'normal 16px "Segoe UI", "Arial", sans-serif';
+            ctx.fillStyle = '#dbdee1';
+            
+            const words = petifiedContent.split(' ');
+            let line = '';
+            let lineY = 88;
+            const maxWidth = 420;
+
+            for(let n = 0; n < words.length; n++) {
+                let testLine = line + words[n] + ' ';
+                let metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth && n > 0) {
+                    ctx.fillText(line, 115, lineY);
+                    line = words[n] + ' ';
+                    lineY += 24;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, 115, lineY);
+
+            // --- Branding Stamp ---
+            ctx.save();
+            ctx.font = 'italic bold 18px "Segoe UI", "Arial", sans-serif';
+            ctx.fillStyle = isDog ? 'rgba(100, 149, 237, 0.2)' : 'rgba(160, 120, 90, 0.2)'; 
+            ctx.textAlign = 'right';
+            ctx.fillText(isDog ? 'Bark!' : 'Meow!', 570, 170);
+            ctx.restore();
+
+            const buffer = canvas.toBuffer('image/png');
+            const attachment = new AttachmentBuilder(buffer, { name: `${petType}ified.png` });
             await interaction.editReply({ files: [attachment] });
 
         } catch (error) {
             console.error(error);
-            await interaction.editReply('Meow... something went wrong while meowifying. 😿');
+            await interaction.editReply(`Something went wrong while ${petType}ifying. 😿`);
         }
     }
 
