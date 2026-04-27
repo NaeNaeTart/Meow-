@@ -311,6 +311,10 @@ client.on(Events.InteractionCreate, async interaction => {
         const author = message.author;
         const originalContent = message.content || "*No text content*";
         
+        // --- Custom Design Logic ---
+        const designs = db.get('petify_designs.json') || {};
+        const userDesign = designs[author.id] || {};
+        
         // --- Advanced Translation Logic ---
         const translate = (text, type) => {
             const catVocab = ['Meow', 'Mrrp', 'Nya', 'Purr', 'Hiss', 'Mew', 'Meowww'];
@@ -361,7 +365,7 @@ client.on(Events.InteractionCreate, async interaction => {
             ctx.shadowOffsetY = 10;
 
             // --- Main Card Background ---
-            ctx.fillStyle = '#1e1f22';
+            ctx.fillStyle = userDesign.background || '#1e1f22';
             const x = 15, y = 15, w = 570, h = 180, r = 20;
             ctx.beginPath();
             ctx.moveTo(x + r, y);
@@ -393,7 +397,8 @@ client.on(Events.InteractionCreate, async interaction => {
                 pCtx.rotate(rotate);
 
                 // Draw the Main Inky Color
-                const mainColor = isDog ? 'rgb(68, 161, 224)' : 'rgb(255, 140, 160)'; // More saturated "Ink" colors
+                let mainColor = isDog ? 'rgb(68, 161, 224)' : 'rgb(255, 140, 160)'; // More saturated "Ink" colors
+                if (userDesign.stampColor) mainColor = userDesign.stampColor;
                 
                 const tCanvas = createCanvas(tw, th);
                 const tCtx = tCanvas.getContext('2d');
@@ -456,7 +461,7 @@ client.on(Events.InteractionCreate, async interaction => {
             ctx.restore();
 
             // Subtle Avatar Border (Color matched to pet)
-            ctx.strokeStyle = isDog ? 'rgba(88, 101, 242, 0.5)' : 'rgba(255, 182, 193, 0.5)';
+            ctx.strokeStyle = userDesign.borderColor || (isDog ? 'rgba(88, 101, 242, 0.5)' : 'rgba(255, 182, 193, 0.5)');
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.arc(60, 65, 36, 0, Math.PI * 2, true);
@@ -464,24 +469,24 @@ client.on(Events.InteractionCreate, async interaction => {
 
             // --- User Header ---
             ctx.font = 'bold 18px "Segoe UI", "Arial", sans-serif';
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = userDesign.textColor || '#ffffff';
             ctx.fillText(author.username, 115, 58);
 
             // Badge
             const nameWidth = ctx.measureText(author.username).width;
             const badgeX = 115 + nameWidth + 10;
-            ctx.fillStyle = isDog ? '#44a1e0' : '#5865F2'; // Distinct blue for dog
+            ctx.fillStyle = userDesign.badgeColor || (isDog ? '#44a1e0' : '#5865F2'); // Distinct blue for dog
             ctx.beginPath();
             ctx.roundRect(badgeX, 42, isDog ? 70 : 74, 22, 4);
             ctx.fill();
             
             ctx.font = 'bold 10px "Segoe UI", "Arial", sans-serif';
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = userDesign.textColor || '#ffffff';
             ctx.fillText(isDog ? 'DOGIFIED' : 'MEOWIFIED', badgeX + 7, 56);
 
             // --- Message Content ---
             ctx.font = 'normal 16px "Segoe UI", "Arial", sans-serif';
-            ctx.fillStyle = '#dbdee1';
+            ctx.fillStyle = userDesign.textColor || '#dbdee1';
             
             const words = petifiedContent.split(' ');
             let line = '';
@@ -504,7 +509,17 @@ client.on(Events.InteractionCreate, async interaction => {
             // --- Branding Stamp ---
             ctx.save();
             ctx.font = 'italic bold 18px "Segoe UI", "Arial", sans-serif';
-            ctx.fillStyle = isDog ? 'rgba(100, 149, 237, 0.2)' : 'rgba(160, 120, 90, 0.2)'; 
+            
+            let stampColor = isDog ? 'rgba(100, 149, 237, 0.2)' : 'rgba(160, 120, 90, 0.2)';
+            if (userDesign.stampColor) {
+                // If it's a hex, we might want to add some transparency to keep it looking like a "stamp"
+                stampColor = userDesign.stampColor;
+                if (stampColor.startsWith('#')) {
+                    // Quick check to see if we should add alpha
+                    ctx.globalAlpha = 0.3;
+                }
+            }
+            ctx.fillStyle = stampColor;
             ctx.textAlign = 'right';
             ctx.fillText(isDog ? 'Bark!' : 'Meow!', 570, 170);
             ctx.restore();

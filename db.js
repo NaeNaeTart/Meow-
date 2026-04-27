@@ -8,7 +8,7 @@ class Database {
         this.saving = false;
         
         // Ensure all DB files exist and load them into memory
-        this.files = ['economy.json', 'warns.json', 'afk.json', 'vclocks.json', 'paws.json', 'scratches.json'];
+        this.files = ['economy.json', 'warns.json', 'afk.json', 'vclocks.json', 'paws.json', 'scratches.json', 'petify_designs.json'];
         for (const file of this.files) {
             const fp = path.join(__dirname, file);
             if (!fs.existsSync(fp)) {
@@ -31,6 +31,15 @@ class Database {
      */
     get(file) {
         return this.cache[file];
+    }
+
+    /**
+     * Set the cached data for a specific file.
+     * @param {string} file - The filename
+     * @param {Object} data - The data to set
+     */
+    set(file, data) {
+        this.cache[file] = data;
     }
 
     /**
