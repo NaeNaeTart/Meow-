@@ -9,7 +9,18 @@ module.exports = {
         .addUserOption(option => option.setName('target').setDescription('The user to headpat').setRequired(true)),
     async execute(interaction) {
         const target = interaction.options.getUser('target');
+        const db = require('../../db');
         
+        let headpats = db.get('headpats.json');
+        if (!headpats) {
+            headpats = {};
+            db.set('headpats.json', headpats);
+        }
+
+        // Increment count
+        headpats[target.id] = (headpats[target.id] || 0) + 1;
+        db.save('headpats.json');
+
         const gifs = [
             'https://media.giphy.com/media/L2z7jvlwyvVUX2P4D4/giphy.gif',
             'https://media.giphy.com/media/ARSp9T7wwxNcs/giphy.gif',
@@ -17,7 +28,7 @@ module.exports = {
         ];
 
         const embed = new EmbedBuilder()
-            .setDescription(`*<@${interaction.user.id}> gently headpats <@${target.id}>*`)
+            .setDescription(`*<@${interaction.user.id}> gently headpats <@${target.id}>*\n\nThey have now received **${headpats[target.id]}** headpats!`)
             .setImage(gifs[Math.floor(Math.random() * gifs.length)])
             .setColor('#FFB6C1');
 

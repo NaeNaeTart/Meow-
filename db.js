@@ -8,7 +8,7 @@ class Database {
         this.saving = false;
         
         // Ensure all DB files exist and load them into memory
-        this.files = ['economy.json', 'warns.json', 'afk.json', 'vclocks.json', 'paws.json', 'scratches.json', 'petify_designs.json'];
+        this.files = ['economy.json', 'warns.json', 'afk.json', 'vclocks.json', 'paws.json', 'scratches.json', 'petify_designs.json', 'marriages.json', 'pets.json', 'headpats.json'];
         for (const file of this.files) {
             const fp = path.join(__dirname, file);
             if (!fs.existsSync(fp)) {
