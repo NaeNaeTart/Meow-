@@ -1,6 +1,9 @@
 # Meow! Discord Bot 🐾
 
 A high-performance, feature-rich Discord bot built with `discord.js` v14, prioritizing non-blocking asynchronous operations and a premium user experience.
+<a href="https://top.gg/bot/1497845203153977454">
+  <img src="https://top.gg/api/widget/1497845203153977454.svg">
+</a>
 
 ## 🚀 Core Features
 
