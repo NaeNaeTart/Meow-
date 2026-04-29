@@ -5,7 +5,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('banned-words')
         .setDescription('Manage banned words for this server! 🚫')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addSubcommand(sub => 
             sub.setName('add')
                 .setDescription('Add a word to the banned list')

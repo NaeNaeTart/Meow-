@@ -17,6 +17,7 @@ module.exports = {
         new SlashCommandBuilder()
             .setName('who')
             .setDescription('Investigate a user and gather hidden details. 🔍')
+            .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
             .addUserOption(opt => opt.setName('target').setDescription('The user to investigate').setRequired(true)),
         new SlashCommandBuilder()
             .setName('vcmute')

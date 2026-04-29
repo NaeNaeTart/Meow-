@@ -31,6 +31,11 @@ module.exports = {
                 .setDescription('Set the channel for bot announcements and system updates')
                 .addChannelOption(opt => opt.setName('channel').setDescription('The channel').setRequired(true).addChannelTypes(ChannelType.GuildText))),
     
+    // Define which subcommands are restricted to which guilds
+    guildRestrictions: {
+        '1498472402420502638': ['github', 'announcements']
+    },
+    
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
         const channel = interaction.options.getChannel('channel');

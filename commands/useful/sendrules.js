@@ -4,7 +4,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('sendrules')
         .setDescription('Post the server rules to a specific channel.')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .setIntegrationTypes([0])
         .setContexts([0])
         .addChannelOption(option => 
