@@ -16,14 +16,15 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle(`📸 ${user.username}'s Avatar`)
             .setImage(globalAvatar)
-            .setColor('#0099ff')
-            .setFooter({ text: `Requested by ${interaction.user.tag}` })
+            .setColor('#FFB6C1')
+            .setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() })
             .setTimestamp();
 
         // If they have a server-specific avatar that is different
         if (member && member.avatar && member.avatar !== user.avatar) {
-            embed.setDescription(`[View Server Avatar](${member.displayAvatarURL({ dynamic: true, size: 4096 })}) | [View Global Avatar](${globalAvatar})`);
-            embed.setImage(member.displayAvatarURL({ dynamic: true, size: 4096 }));
+            const serverAvatar = member.displayAvatarURL({ dynamic: true, size: 4096 });
+            embed.setDescription(`[View Server Avatar](${serverAvatar}) | [View Global Avatar](${globalAvatar})`);
+            embed.setImage(serverAvatar);
         } else {
             embed.setDescription(`[View Full Resolution](${globalAvatar})`);
         }
