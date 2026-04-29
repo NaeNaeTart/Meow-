@@ -307,7 +307,10 @@ const server = http.createServer((req, res) => {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', async () => {
+            res.writeHead(200);
+            res.end('OK');
             try {
+                if (!body) return;
                 const data = JSON.parse(body);
                 const guildConfigs = db.get('guild_configs.json') || {};
                 
@@ -338,8 +341,6 @@ const server = http.createServer((req, res) => {
                 }
             } catch (e) { console.error('Webhook Error:', e); }
         });
-        res.writeHead(200);
-        res.end('OK');
     } else {
         res.writeHead(404);
         res.end(JSON.stringify({ error: 'Not Found' }));
@@ -359,7 +360,7 @@ server.listen(PORT, '0.0.0.0', async () => {
     
     try {
         const localtunnel = require('localtunnel');
-        const tunnel = await localtunnel({ port: PORT });
+        const tunnel = await localtunnel({ port: PORT, subdomain: 'meow-bot-webhook' });
         console.log(`🌐 Public API URL: ${tunnel.url}`);
         
         tunnel.on('close', () => {
