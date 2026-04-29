@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const db = require('../../db.js');
 
 module.exports = {
     data: [
@@ -78,22 +79,58 @@ module.exports = {
 
         } else if (commandName === 'vcmute') {
             const target = interaction.options.getMember('target');
-            await target.voice.setMute(true);
-            await interaction.reply(`🔇 Muted **${target.user.username}** in voice! 🐾`);
+            const voiceStatus = db.get('voice_status.json');
+            if (!voiceStatus[interaction.guildId]) voiceStatus[interaction.guildId] = {};
+            if (!voiceStatus[interaction.guildId][target.id]) voiceStatus[interaction.guildId][target.id] = {};
+            
+            voiceStatus[interaction.guildId][target.id].mute = true;
+            db.save('voice_status.json');
+
+            try {
+                await target.voice.setMute(true);
+            } catch (e) {}
+            await interaction.reply(`🔇 Muted **${target.user.username}** in voice! State is now persistent. 🐾`);
 
         } else if (commandName === 'vcunmute') {
             const target = interaction.options.getMember('target');
-            await target.voice.setMute(false);
+            const voiceStatus = db.get('voice_status.json');
+            if (voiceStatus[interaction.guildId] && voiceStatus[interaction.guildId][target.id]) {
+                delete voiceStatus[interaction.guildId][target.id].mute;
+                if (Object.keys(voiceStatus[interaction.guildId][target.id]).length === 0) delete voiceStatus[interaction.guildId][target.id];
+                db.save('voice_status.json');
+            }
+
+            try {
+                await target.voice.setMute(false);
+            } catch (e) {}
             await interaction.reply(`🔊 Unmuted **${target.user.username}** in voice! 🐾`);
 
         } else if (commandName === 'vcdeafen') {
             const target = interaction.options.getMember('target');
-            await target.voice.setDeaf(true);
-            await interaction.reply(`🔇 Deafened **${target.user.username}** in voice! 🐾`);
+            const voiceStatus = db.get('voice_status.json');
+            if (!voiceStatus[interaction.guildId]) voiceStatus[interaction.guildId] = {};
+            if (!voiceStatus[interaction.guildId][target.id]) voiceStatus[interaction.guildId][target.id] = {};
+            
+            voiceStatus[interaction.guildId][target.id].deaf = true;
+            db.save('voice_status.json');
+
+            try {
+                await target.voice.setDeaf(true);
+            } catch (e) {}
+            await interaction.reply(`🔇 Deafened **${target.user.username}** in voice! State is now persistent. 🐾`);
 
         } else if (commandName === 'vcundeafen') {
             const target = interaction.options.getMember('target');
-            await target.voice.setDeaf(false);
+            const voiceStatus = db.get('voice_status.json');
+            if (voiceStatus[interaction.guildId] && voiceStatus[interaction.guildId][target.id]) {
+                delete voiceStatus[interaction.guildId][target.id].deaf;
+                if (Object.keys(voiceStatus[interaction.guildId][target.id]).length === 0) delete voiceStatus[interaction.guildId][target.id];
+                db.save('voice_status.json');
+            }
+
+            try {
+                await target.voice.setDeaf(false);
+            } catch (e) {}
             await interaction.reply(`🔊 Undeafened **${target.user.username}** in voice! 🐾`);
         }
     },

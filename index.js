@@ -114,6 +114,31 @@ client.once(Events.ClientReady, async readyClient => {
     }, 60000); // Check every minute
 });
 
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+    // Only trigger if they are in a voice channel
+    if (!newState.channelId) return;
+
+    const guildId = newState.guild.id;
+    const userId = newState.member.id;
+    const voiceStatus = db.get('voice_status.json');
+
+    if (voiceStatus[guildId] && voiceStatus[guildId][userId]) {
+        const status = voiceStatus[guildId][userId];
+        try {
+            // Apply persistent mute if not already muted
+            if (status.mute && !newState.serverMute) {
+                await newState.setMute(true, 'Persistent VC Mute');
+            }
+            // Apply persistent deafen if not already deafened
+            if (status.deaf && !newState.serverDeaf) {
+                await newState.setDeaf(true, 'Persistent VC Deafen');
+            }
+        } catch (e) {
+            // Silently fail if hierarchy/perms don't allow it
+        }
+    }
+});
+
 // Interaction listener for Slash Commands
 client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isModalSubmit()) {
@@ -280,6 +305,7 @@ const http = require('http');
 const PORT = 2444;
 
 const server = http.createServer((req, res) => {
+    console.log(`📥 Incoming ${req.method} request to ${req.url}`);
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -358,15 +384,20 @@ server.on('error', (e) => {
 server.listen(PORT, '0.0.0.0', async () => {
     console.log(`🐾 Scratch API is purring on http://localhost:${PORT}`);
     
+    // --- Smee.io Webhook Tunnel ---
     try {
-        const localtunnel = require('localtunnel');
-        const tunnel = await localtunnel({ port: PORT, subdomain: 'meow-bot-webhook' });
-        console.log(`🌐 Public API URL: ${tunnel.url}`);
-        
-        tunnel.on('close', () => {
-            console.log('🌐 Public API tunnel closed.');
+        const SmeeClient = require('smee-client');
+        const smee = new SmeeClient({
+            source: 'https://smee.io/meow-bot-v1-k2l8x3',
+            target: `http://localhost:${PORT}/github-webhook`,
+            logger: {
+                info: (msg) => console.log(`⚓ Smee: ${msg}`),
+                error: (msg) => console.error(`❌ Smee Error: ${msg}`)
+            }
         });
+        smee.start();
+        console.log(`🌐 GitHub Webhook URL: https://smee.io/meow-bot-v1-k2l8x3`);
     } catch (err) {
-        console.warn('Could not start localtunnel. The API will only be available locally.');
+        console.warn('Could not start Smee client.');
     }
 });
