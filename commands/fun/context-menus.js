@@ -56,7 +56,7 @@ module.exports = {
         const petifiedContent = translate(originalContent, petType);
 
         try {
-            const canvas = createCanvas(600, 220);
+            const canvas = createCanvas(600, 260);
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = userDesign.background || '#1e1f22';
             const x = 15, y = 15, w = 570, h = 180, r = 20;
@@ -72,21 +72,56 @@ module.exports = {
             ctx.save(); ctx.beginPath(); ctx.arc(60, 65, 36, 0, Math.PI * 2, true); ctx.closePath(); ctx.clip();
             ctx.drawImage(avatar, 24, 29, 72, 72); ctx.restore();
 
-            ctx.font = 'bold 18px "Segoe UI", "Arial", sans-serif';
+            ctx.font = 'bold 22px "Inter"';
             ctx.fillStyle = userDesign.textColor || '#ffffff';
             ctx.fillText(author.username, 115, 58);
 
-            ctx.font = 'normal 16px "Segoe UI", "Arial", sans-serif';
+            // --- Label ---
+            ctx.save();
+            ctx.font = 'italic bold 16px "Inter"';
+            ctx.fillStyle = userDesign.textColor || (isDog ? '#FFD700' : '#FFB6C1');
+            ctx.textAlign = 'right';
+            ctx.fillText(`${isDog ? 'Dogified' : 'Meowified'}! ✨`, 570, 58);
+            ctx.restore();
+
+            ctx.font = '18px "Inter"';
             ctx.fillStyle = userDesign.textColor || '#dbdee1';
             const words = petifiedContent.split(' ');
-            let line = ''; let lineY = 88; const maxWidth = 420;
+            let line = ''; let lineY = 95; const maxWidth = 420;
             for(let n = 0; n < words.length; n++) {
                 let testLine = line + words[n] + ' ';
                 if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-                    ctx.fillText(line, 115, lineY); line = words[n] + ' '; lineY += 24;
+                    ctx.fillText(line, 115, lineY); line = words[n] + ' '; lineY += 28;
                 } else line = testLine;
             }
             ctx.fillText(line, 115, lineY);
+
+            // --- Stamps (Paw Prints) ---
+            const assets = interaction.client.assets;
+            const pawAsset = isDog ? assets.dogPaw : assets.catPaw;
+            if (assets && pawAsset) {
+                ctx.save();
+                ctx.globalAlpha = 0.15;
+                // Bottom right stamp - fully inside bubble
+                ctx.translate(480, 110);
+                ctx.rotate(Math.PI / 10);
+                ctx.drawImage(pawAsset, 0, 0, 80, 80);
+                ctx.restore();
+
+                ctx.save();
+                ctx.globalAlpha = 0.1;
+                // Middle right stamp - clear of text
+                ctx.translate(510, 40);
+                ctx.rotate(-Math.PI / 15);
+                ctx.drawImage(pawAsset, 0, 0, 50, 50);
+                ctx.restore();
+            }
+
+            // --- Bottom Text ---
+            ctx.font = 'bold 14px "Inter"';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${isDog ? '🐶' : '🐾'} ${isDog ? 'Dog' : 'Meow'}! Bot System`, 300, 240);
 
             const buffer = canvas.toBuffer('image/png');
             const attachment = new AttachmentBuilder(buffer, { name: `${petType}ified.png` });

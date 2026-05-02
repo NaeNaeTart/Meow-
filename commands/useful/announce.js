@@ -6,6 +6,8 @@ module.exports = {
         .setName('announce')
         .setDescription('Post an official announcement to the updates channel! 📣')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setIntegrationTypes([0])
+        .setContexts([0])
         .addStringOption(opt => opt.setName('title').setDescription('The title of the announcement').setRequired(true))
         .addStringOption(opt => opt.setName('content').setDescription('The main text of the announcement').setRequired(true))
         .addStringOption(opt => opt.setName('image').setDescription('Optional image URL').setRequired(false)),

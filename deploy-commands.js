@@ -28,7 +28,18 @@ if (fs.existsSync(commandsPath)) {
 }
 
 function getCommandsForGuild(guildId = null) {
-    return allCommands.map(cmd => {
+    return allCommands.filter(cmd => {
+        const restrictions = cmd.guildRestrictions || {};
+        
+        // If the command itself is restricted to a guild
+        for (const [restrictedGuildId, restrictedSubcommands] of Object.entries(restrictions)) {
+            // If it's a command-level restriction (empty array)
+            if (restrictedSubcommands.length === 0) {
+                if (guildId !== restrictedGuildId) return false;
+            }
+        }
+        return true;
+    }).map(cmd => {
         const data = JSON.parse(JSON.stringify(cmd.data)); // Deep clone
         
         // If the command has subcommands, filter them

@@ -7,11 +7,15 @@ module.exports = {
         new SlashCommandBuilder()
             .setName('report')
             .setDescription('Report a user for bad behavior! 🛡️')
+            .setIntegrationTypes([0])
+            .setContexts([0])
             .addUserOption(opt => opt.setName('target').setDescription('The user to report').setRequired(true))
             .addStringOption(opt => opt.setName('reason').setDescription('The reason for the report').setRequired(true)),
         new ContextMenuCommandBuilder()
             .setName('Report Message')
             .setType(ApplicationCommandType.Message)
+            .setIntegrationTypes([0])
+            .setContexts([0])
     ],
     
     async execute(interaction) {

@@ -6,6 +6,8 @@ module.exports = {
         .setName('banned-words')
         .setDescription('Manage banned words for this server! 🚫')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setIntegrationTypes([0])
+        .setContexts([0])
         .addSubcommand(sub => 
             sub.setName('add')
                 .setDescription('Add a word to the banned list')

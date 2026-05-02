@@ -12,6 +12,11 @@ module.exports = {
                 .setDescription('The channel to send the rules to')
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(true)),
+    
+    guildRestrictions: {
+        '1498472402420502638': [] // Empty array means entire command is restricted
+    },
+
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
         const channel = interaction.options.getChannel('channel');

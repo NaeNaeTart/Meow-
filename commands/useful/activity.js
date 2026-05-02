@@ -5,7 +5,9 @@ const db = require('../../db');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('activity-heatmap')
-        .setDescription('Generate a visual graph of server activity! 📊'),
+        .setDescription('Generate a visual graph of server activity! 📊')
+        .setIntegrationTypes([0])
+        .setContexts([0]),
     
     async execute(interaction) {
         await interaction.deferReply();

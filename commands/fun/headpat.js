@@ -4,8 +4,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('headpat')
         .setDescription('Give someone a headpat')
-        .setIntegrationTypes([0, 1])
-        .setContexts([0, 1, 2])
+        .setIntegrationTypes([0])
+        .setContexts([0])
         .addUserOption(option => option.setName('target').setDescription('The user to headpat').setRequired(true)),
     async execute(interaction) {
         const target = interaction.options.getUser('target');

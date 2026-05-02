@@ -3,6 +3,15 @@ const { Client, Events, GatewayIntentBits, AttachmentBuilder, Partials, MessageF
 const { createAudioPlayer, createAudioResource, joinVoiceChannel, AudioPlayerStatus } = require('@discordjs/voice');
 const path = require('path');
 const { createCanvas, loadImage, registerFont } = require('canvas');
+
+// --- Register Fonts ---
+try {
+    registerFont(path.join(__dirname, 'Inter-Regular.ttf'), { family: 'Inter' });
+    registerFont(path.join(__dirname, 'Inter-SemiBold.ttf'), { family: 'Inter', weight: 'bold' });
+    console.log('📝 Fonts registered successfully.');
+} catch (e) {
+    console.error('⚠️ Failed to register fonts, falling back to system fonts:', e.message);
+}
 const fs = require('fs');
 const ms = require('ms');
 const db = require('./db');
@@ -20,13 +29,13 @@ const client = new Client({
 });
 
 // --- Pre-load Official Assets for Performance ---
-let cachedCatPaw, cachedDogPaw;
+client.assets = { catPaw: null, dogPaw: null };
 const loadAssets = async () => {
     try {
         const catPath = path.join(__dirname, 'Meow! stash', 'Cat Paw.png');
         const dogPath = path.join(__dirname, 'Meow! stash', 'Dog Paw.png');
-        if (fs.existsSync(catPath)) cachedCatPaw = await loadImage(catPath);
-        if (fs.existsSync(dogPath)) cachedDogPaw = await loadImage(dogPath);
+        if (fs.existsSync(catPath)) client.assets.catPaw = await loadImage(catPath);
+        if (fs.existsSync(dogPath)) client.assets.dogPaw = await loadImage(dogPath);
         console.log('🐾 Official assets cached for high-performance rendering.');
     } catch (e) {
         console.error('⚠️ Failed to pre-load paws:', e);
@@ -171,6 +180,25 @@ client.on(Events.InteractionCreate, async interaction => {
     const command = client.commands.get(interaction.commandName);
 
     if (!command) return;
+
+    // --- Guild Restriction Check ---
+    if (command.guildRestrictions) {
+        const guildId = interaction.guildId;
+        const subcommand = interaction.options.getSubcommand(false);
+        
+        for (const [restrictedGuildId, restrictedSubcommands] of Object.entries(command.guildRestrictions)) {
+            if (subcommand && restrictedSubcommands.includes(subcommand)) {
+                if (guildId !== restrictedGuildId) {
+                    return await interaction.reply({ content: '❌ This subcommand is restricted to the Official Support Server! 🐾', flags: [MessageFlags.Ephemeral] });
+                }
+            } else if (!subcommand) {
+                // If the whole command is restricted (not just subcommands)
+                if (guildId !== restrictedGuildId) {
+                    return await interaction.reply({ content: '❌ This command is restricted to the Official Support Server! 🐾', flags: [MessageFlags.Ephemeral] });
+                }
+            }
+        }
+    }
 
     try {
         await command.execute(interaction);

@@ -5,8 +5,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('kiss')
         .setDescription('Give someone a smooch and transfer some Kisses to them! 💋')
-        .setIntegrationTypes([0, 1])
-        .setContexts([0, 1, 2])
+        .setIntegrationTypes([0])
+        .setContexts([0])
         .addUserOption(option => option.setName('target').setDescription('The user to kiss').setRequired(true))
         .addIntegerOption(option => option.setName('amount').setDescription('How many Kisses to give').setRequired(true).setMinValue(1)),
     async execute(interaction) {
@@ -35,6 +35,31 @@ module.exports = {
         ecoData.users[target.id].balance += amount;
         db.save('economy.json');
 
+        const sharp = require('sharp');
+        
+        await interaction.deferReply();
+
+        let attachment;
+        try {
+            const gifUrl = 'https://media.giphy.com/media/G3va31oGiePzQNhv3m/giphy.gif';
+            const response = await fetch(gifUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            let buffer = Buffer.from(arrayBuffer);
+
+            // Normalize image size using Sharp
+            let pipeline = sharp(buffer, { animated: true });
+            const metadata = await pipeline.metadata();
+            
+            if (metadata.width < 600) {
+                pipeline = pipeline.resize({ width: 600 });
+            }
+            
+            buffer = await pipeline.toBuffer();
+            attachment = new AttachmentBuilder(buffer, { name: 'kiss.gif' });
+        } catch (e) {
+            console.error('Kiss image processing error:', e);
+        }
+
         const embed = new EmbedBuilder()
             .setDescription(`💋 <@${sender.id}> gave <@${target.id}> a big smooch!`)
             .addFields(
@@ -42,9 +67,14 @@ module.exports = {
                 { name: `${sender.username}'s Balance`, value: `${ecoData.users[sender.id].balance}`, inline: true },
                 { name: `${target.username}'s Balance`, value: `${ecoData.users[target.id].balance}`, inline: true }
             )
-            .setColor('#FFB6C1')
-            .setImage('https://media.giphy.com/media/G3va31oGiePzQNhv3m/giphy.gif'); // Cute kiss gif
+            .setColor('#FFB6C1');
 
-        await interaction.reply({ content: `<@${target.id}>`, embeds: [embed] });
+        if (attachment) {
+            embed.setImage('attachment://kiss.gif');
+            await interaction.editReply({ content: `<@${target.id}>`, embeds: [embed], files: [attachment] });
+        } else {
+            embed.setImage('https://media.giphy.com/media/G3va31oGiePzQNhv3m/giphy.gif');
+            await interaction.editReply({ content: `<@${target.id}>`, embeds: [embed] });
+        }
     },
 };

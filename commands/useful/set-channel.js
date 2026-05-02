@@ -6,6 +6,8 @@ module.exports = {
         .setName('set-channel')
         .setDescription('Configure special channels for the bot! ⚙️')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setIntegrationTypes([0])
+        .setContexts([0])
         .addSubcommand(sub => 
             sub.setName('mod-logs')
                 .setDescription('Set the channel for moderation logs')

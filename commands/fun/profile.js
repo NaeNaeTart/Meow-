@@ -78,34 +78,41 @@ module.exports = {
             ctx.stroke();
 
             // Username
-            ctx.font = 'bold 48px "Segoe UI", "Arial", sans-serif';
+            ctx.font = 'bold 54px "Inter"';
             ctx.fillStyle = '#ffffff';
             ctx.fillText(user.username, 300, 100);
 
             // Stats Section
-            ctx.font = 'bold 24px "Segoe UI", "Arial", sans-serif';
+            ctx.font = 'bold 26px "Inter"';
             
             // Economy
             ctx.fillStyle = '#FF69B4'; // Hot pink
             ctx.fillText('💋 Kisses Balance:', 300, 180);
+            ctx.font = '24px "Inter"';
             ctx.fillStyle = '#dbdee1';
             ctx.fillText(`${balance.toLocaleString()}`, 300, 215);
 
             // Marriage
+            ctx.font = 'bold 26px "Inter"';
             ctx.fillStyle = '#FF1493'; // Deep pink
             ctx.fillText('💒 Status:', 300, 280);
+            ctx.font = '24px "Inter"';
             ctx.fillStyle = '#dbdee1';
             ctx.fillText(partnerName, 300, 315);
 
             // Pet
+            ctx.font = 'bold 26px "Inter"';
             ctx.fillStyle = '#FFA07A'; // Salmon
             ctx.fillText('🐾 Pet:', 550, 180);
+            ctx.font = '24px "Inter"';
             ctx.fillStyle = '#dbdee1';
             ctx.fillText(petInfo, 550, 215);
 
             // Headpats
+            ctx.font = 'bold 26px "Inter"';
             ctx.fillStyle = '#87CEEB'; // Sky blue
             ctx.fillText('✋ Headpats Received:', 550, 280);
+            ctx.font = '24px "Inter"';
             ctx.fillStyle = '#dbdee1';
             ctx.fillText(`${patCount.toLocaleString()}`, 550, 315);
 
