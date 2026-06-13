@@ -45,7 +45,7 @@ module.exports = {
             await interaction.deferReply();
 
             try {
-                const response = await fetch(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${fmUser}&api_key=${apiKey}&format=json&limit=1`);
+                const response = await fetch(`http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(fmUser)}&api_key=${apiKey}&format=json&limit=1`);
                 const data = await response.json();
 
                 if (!data.recenttracks || !data.recenttracks.track[0]) {
@@ -76,7 +76,7 @@ module.exports = {
 
             await interaction.deferReply();
             try {
-                const response = await fetch(`http://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${fmUser}&api_key=${apiKey}&format=json&limit=5`);
+                const response = await fetch(`http://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${encodeURIComponent(fmUser)}&api_key=${apiKey}&format=json&limit=5`);
                 const data = await response.json();
                 const tracks = data.toptracks.track;
                 const list = tracks.map((t, i) => `${i + 1}. **${t.name}** by **${t.artist.name}** (${t.playcount} plays)`).join('\n');

@@ -36,7 +36,7 @@ module.exports = {
             .setAuthor({ name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() })
             .setTimestamp();
 
-        if (image) embed.setImage(image);
+        if (image && /^https?:\/\//i.test(image)) embed.setImage(image);
 
         await channel.send({ embeds: [embed] });
         await interaction.reply({ content: `✅ Announcement posted in ${channel}! 🐾`, ephemeral: true });

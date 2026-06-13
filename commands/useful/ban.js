@@ -78,7 +78,7 @@ module.exports = {
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
             console.error('Ban Error:', error);
-            await interaction.reply({ content: `❌ API Error: ${error.message} 😿`, flags: [MessageFlags.Ephemeral] });
+            await interaction.reply({ content: '❌ Something went wrong while banning. 😿', flags: [MessageFlags.Ephemeral] });
         }
     },
 };

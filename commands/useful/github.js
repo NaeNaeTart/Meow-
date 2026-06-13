@@ -13,7 +13,7 @@ module.exports = {
         await interaction.deferReply();
 
         try {
-            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+            const response = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
             if (response.status === 404) {
                 return await interaction.editReply(`❌ Meow... I couldn't find the repository "**${owner}/${repo}**". 😿`);
             }
