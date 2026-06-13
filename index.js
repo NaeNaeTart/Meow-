@@ -170,7 +170,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 .setTimestamp()
                 .setFooter({ text: 'Use /confess to submit your own!' });
 
-            await channel.send({ embeds: [embed] });
+            await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
             await interaction.reply({ content: '✅ Your confession has been whispered to the void... 🐾', flags: [MessageFlags.Ephemeral] });
         }
     }
@@ -330,11 +330,15 @@ client.login(process.env.DISCORD_TOKEN);
 
 // --- Scratch API for Equicord Plugin ---
 const http = require('http');
+const crypto = require('crypto');
 const PORT = 2444;
 
 const server = http.createServer((req, res) => {
-    console.log(`📥 Incoming ${req.method} request to ${req.url}`);
-    // Set CORS headers
+    if (process.env.DEBUG_HTTP) console.log(`📥 Incoming ${req.method} request to ${req.url}`);
+    // CORS: this endpoint exposes only a public, GET-only integer scratch count
+    // (no cookies/credentials) and is consumed by the Equicord plugin which has
+    // no fixed origin, so a wildcard origin is intentional and safe here. The
+    // POST /github-webhook route is gated by HMAC, not CORS.
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -348,8 +352,13 @@ const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     if (url.pathname.startsWith('/scratches/')) {
         const userId = url.pathname.split('/')[2];
+        if (!/^\d{17,20}$/.test(userId)) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid user id' }));
+            return;
+        }
         const data = db.get('scratches.json');
-        
+
         let count = 0;
         if (data && data.users) {
             count = data.users[userId] || 0;
@@ -358,14 +367,44 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ count }));
     } else if (url.pathname === '/github-webhook') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
+        const secret = process.env.GITHUB_WEBHOOK_SECRET;
+        // Unconfigured deploy is dormant: accept and ignore, never process.
+        if (!secret) { res.writeHead(200); res.end('OK'); return; }
+
+        const MAX_BODY = 1024 * 1024; // 1 MB hard cap
+        const chunks = [];
+        let size = 0;
+        let aborted = false;
+        req.on('data', chunk => {
+            if (aborted) return;
+            size += chunk.length;
+            if (size > MAX_BODY) {
+                aborted = true;
+                res.writeHead(413);
+                res.end('Payload Too Large');
+                req.destroy();
+                return;
+            }
+            chunks.push(chunk);
+        });
         req.on('end', async () => {
+            if (aborted) return;
+            const raw = Buffer.concat(chunks);
+
+            // Verify GitHub's HMAC-SHA256 signature over the exact raw bytes.
+            const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(raw).digest('hex');
+            const sigBuf = Buffer.from(req.headers['x-hub-signature-256'] || '', 'utf8');
+            const expBuf = Buffer.from(expected, 'utf8');
+            if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+                res.writeHead(401);
+                res.end('Unauthorized');
+                return;
+            }
+
             res.writeHead(200);
             res.end('OK');
             try {
-                if (!body) return;
-                const data = JSON.parse(body);
+                const data = JSON.parse(raw.toString('utf8'));
                 const guildConfigs = db.get('guild_configs.json') || {};
                 
                 // For each guild that has a github channel set
@@ -412,20 +451,25 @@ server.on('error', (e) => {
 server.listen(PORT, '0.0.0.0', async () => {
     console.log(`🐾 Scratch API is purring on http://localhost:${PORT}`);
     
-    // --- Smee.io Webhook Tunnel ---
-    try {
-        const SmeeClient = require('smee-client');
-        const smee = new SmeeClient({
-            source: 'https://smee.io/meow-bot-v1-k2l8x3',
-            target: `http://localhost:${PORT}/github-webhook`,
-            logger: {
-                info: (msg) => console.log(`⚓ Smee: ${msg}`),
-                error: (msg) => console.error(`❌ Smee Error: ${msg}`)
-            }
-        });
-        smee.start();
-        console.log(`🌐 GitHub Webhook URL: https://smee.io/meow-bot-v1-k2l8x3`);
-    } catch (err) {
-        console.warn('Could not start Smee client.');
+    // --- Smee.io Webhook Tunnel (dev-only, opt-in via SMEE_URL) ---
+    // Note: smee re-serializes the JSON body, so HMAC verification will NOT pass
+    // over a smee-relayed payload. Use direct delivery to :2444/github-webhook in
+    // production; keep this for local development only.
+    if (process.env.SMEE_URL) {
+        try {
+            const SmeeClient = require('smee-client');
+            const smee = new SmeeClient({
+                source: process.env.SMEE_URL,
+                target: `http://localhost:${PORT}/github-webhook`,
+                logger: {
+                    info: (msg) => console.log(`⚓ Smee: ${msg}`),
+                    error: (msg) => console.error(`❌ Smee Error: ${msg}`)
+                }
+            });
+            smee.start();
+            console.log('🌐 GitHub Webhook tunnel started (Smee).');
+        } catch (err) {
+            console.warn('Could not start Smee client.');
+        }
     }
 });
